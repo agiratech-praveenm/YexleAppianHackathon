@@ -1,0 +1,8 @@
+{
+    "name": "Royalty for Land - Yexle Appian",
+    "description": "Yexle Appian Hackathon - Application is used predominantely for creation of lands as ERC-721 NFT and registration of lands",
+    "image": "https://ipfs.io/ipfs/Qmb7CvA1jfUnXVc8ZJCTxaRvgAXNtyL6HonspjAsLyZ2Z7",
+    "external_link": "external-link-url",
+    "seller_fee_basis_points": 200,
+    "fee_recipient": "0x71A66921E1429c29C9c234f8d71504C88e503392"
+}
