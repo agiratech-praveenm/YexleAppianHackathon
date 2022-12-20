@@ -54,10 +54,10 @@ const createAddress = function() {
 }
 
 // write actions with the flow
-const addUser = async (address) => {
-  if (isAddress(address)) {
+const addUser = async (addressDetails) => {
+  if (isAddress(addressDetails._l1) && isAddress(addressDetails._ad)) {
     let { userSigner, provider } = initiateUserContract();
-    return userSigner.addUser(address, {
+    return userSigner.addUser(addressDetails, {
       gasLimit: ethers.utils.hexlify(1000000),
     })
     .then(transaction => {
@@ -72,9 +72,9 @@ const addUser = async (address) => {
   }
 }
 
-const addUserBulk = async (addresses) => {
+const addUserBulk = async (l1, addresses) => {
   let { userSigner, provider } = initiateUserContract();
-  return userSigner.addUserBulk(addresses, {
+  return userSigner.addUserBulk1(l1, addresses, {
     gasLimit: ethers.utils.hexlify(1000000),
   })
   .then(transaction => {
@@ -86,9 +86,9 @@ const addUserBulk = async (addresses) => {
   .catch(err => {return err;})
 }
 
-const mint = async (to, tokenId, tokenUri) => {
+const mint = async (_l1, _to, land_id, token_ipfs_hash) => {
   let {regSigner, provider} = initiateRegistrationContract();
-  return regSigner.mint(to, tokenId, tokenUri, {
+  return regSigner.mint(_l1, _to, land_id, token_ipfs_hash, {
     gasLimit: ethers.utils.hexlify(1000000),
   })
   .then(transaction => {
@@ -100,9 +100,9 @@ const mint = async (to, tokenId, tokenUri) => {
   .catch(err => {return err;})
 }
 
-const landDocumentViewRequestApprove = async (requestor, tokenId, status) => {
+const landDocumentViewRequestApprove = async (_l1, _requestor, land_id, status) => {
   let {regSigner, provider} = initiateRegistrationContract();
-  return regSigner.landDocumentViewRequestApprove(requestor, tokenId, status, {
+  return regSigner.landDocumentViewRequestApprove(_l1, _requestor, land_id, status, {
     gasLimit: ethers.utils.hexlify(1000000),
   })
   .then(transaction => {
@@ -114,15 +114,15 @@ const landDocumentViewRequestApprove = async (requestor, tokenId, status) => {
   .catch(err => {return err;})
 }
 
-const viewDocumentByRequesters = async (address, tokenId) => {
+const viewDocumentByRequesters = async (_requestor, land_id) => {
   let {regContract} = initiateRegistrationContract();
-   let land  = await regContract.viewDocumentByRequesters(address, tokenId);
+   let land  = await regContract.viewDocumentByRequesters(_requestor, land_id);
    return land;
 }
 
-const requestLandForSale = async (tokenId) => {
+const requestLandForSale = async (_requestor, land_id) => {
   let {regSigner, provider} = initiateRegistrationContract();
-  return regSigner.requestLandForSale(tokenId, {
+  return regSigner.requestLandForSale(_requestor, land_id, {
     gasLimit: ethers.utils.hexlify(1000000),
   })
   .then(transaction => {
@@ -134,9 +134,9 @@ const requestLandForSale = async (tokenId) => {
   .catch(err => {return err;})
 }
 
-const ownerDecisionforRaisedRequest = async (requestor, tokenId, status) => {
+const ownerDecisionforRaisedRequest = async (owner, _requestor, land_id, status) => {
   let {regSigner, provider} = initiateRegistrationContract();
-  return regSigner.ownerDecisionforRaisedRequest(requestor, tokenId, status, {
+  return regSigner.ownerDecisionforRaisedRequest(owner, _requestor, land_id, status, {
     gasLimit: ethers.utils.hexlify(1000000),
   })
   .then(transaction => {
@@ -148,9 +148,37 @@ const ownerDecisionforRaisedRequest = async (requestor, tokenId, status) => {
   .catch(err => {return err;})
 }
 
-const registrationForLandByBuyer = async (tokenId, docUri) => {
+const registrationForLandByBuyer = async (_requestor, land_id, docUri) => {
   let {regSigner, provider} = initiateRegistrationContract();
-  return regSigner.registrationForLandByBuyer(tokenId, docUri, {
+  return regSigner.registrationForLandByBuyer(_requestor, land_id, docUri, {
+    gasLimit: ethers.utils.hexlify(1000000),
+  })
+  .then(transaction => {
+    return provider.waitForTransaction(transaction.hash);
+  })
+  .then(receipt => {
+    return receipt;
+  })
+  .catch(err => {return err;})
+}
+
+const approveByL1 = async (_l1, data) => {
+  let {regSigner, provider} = initiateRegistrationContract();
+  return regSigner.approveByL1(_l1, data, {
+    gasLimit: ethers.utils.hexlify(1000000),
+  })
+  .then(transaction => {
+    return provider.waitForTransaction(transaction.hash);
+  })
+  .then(receipt => {
+    return receipt;
+  })
+  .catch(err => {return err;})
+}
+
+const approveByL2 = async (_l2, data) => {
+  let {regSigner, provider} = initiateRegistrationContract();
+  return regSigner.approveByL2(_l2, data, {
     gasLimit: ethers.utils.hexlify(1000000),
   })
   .then(transaction => {
@@ -171,5 +199,7 @@ module.exports = {
   viewDocumentByRequesters,
   requestLandForSale,
   ownerDecisionforRaisedRequest,
-  registrationForLandByBuyer
+  registrationForLandByBuyer,
+  approveByL1,
+  approveByL2
 }

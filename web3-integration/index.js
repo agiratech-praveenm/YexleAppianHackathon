@@ -1,13 +1,13 @@
 const express = require('express');
-const dotEnv = require("dotenv");
+require("dotenv").config();
 const axios = require("axios");
 const FormData = require('form-data');
 const fileupload = require("express-fileupload");
 const integration = require('./services/integration');
 
 const app = express();
-// Config env file
-dotEnv.config();
+// // Config env file
+// dotEnv.config();
 app.use(express.json());
 app.use(fileupload());
 app.use(function(req, res, next) {
@@ -23,8 +23,7 @@ app.get("/generate_wallet", async (req, res) => {
 })
 
 app.post('/user/create', (req, res) => {
-  let {address} = req.body;
-  return integration.addUser(address)
+  return integration.addUser(req.body)
   .then((resp) => {
     if (resp.status) {
       return res.status(200).send({
@@ -39,16 +38,16 @@ app.post('/user/create', (req, res) => {
     }
   })
   .catch(err => {
+    console.log(err)
     return res.status(400).send({
-      message: 'Land creation failed',
+      message: 'User creation failed',
       error: err.message
     })
   })
 })
 
 app.post('/user/bulk_create', (req, res) => {
-  let {addresses} = req.body;
-  return integration.addUserBulk(addresses)
+  return integration.addUserBulk(req.body._l1, req.body.addresses)
   .then((resp) => {
     if (resp.status) {
       return res.status(200).send({
@@ -130,8 +129,8 @@ app.post('/pin_json', (req, res, next) => {
 });
 
 app.post('/mint_land', (req, res) => {
-  let {land_id, owner, token_ipfs_hash} = req.body;
-  return integration.mint(owner, land_id, token_ipfs_hash)
+  let {_l1, _to, land_id, token_ipfs_hash} = req.body;
+  return integration.mint(_l1, _to, land_id, token_ipfs_hash)
   .then((resp) => {
     if (resp.status) {
       return res.status(200).send({
@@ -151,9 +150,175 @@ app.post('/mint_land', (req, res) => {
       error: err.message
     })
   })
-}
+})
 
+app.post('/approve_view_request', (req, res) => {
+  let {_l1, _requestor, land_id, status} = req.body;
+  return integration.landDocumentViewRequestApprove(_l1, _requestor, land_id, status)
+  .then((resp) => {
+    if (resp.status) {
+      return res.status(200).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    } else {
+      return res.status(400).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    }
+  })
+  .catch(err => {
+    return res.status(400).send({
+      message: 'Failed to approve land view request',
+      error: err.message
+    })
+  })
+})
 
+app.post('/view_land', (req, res) => {
+  let {_requestor, land_id} = req.body;
+  return integration.viewDocumentByRequesters(_requestor, land_id)
+  .then((resp) => {
+    if (resp) {
+      return res.status(200).send({
+        status: 1,
+        uri: resp
+      })
+    } else {
+      return res.status(400).send({
+        status: 0,
+        transaction_hash: "Failed to load land"
+      })
+    }
+  })
+  .catch(err => {
+    return res.status(400).send({
+      message: 'Failed to load land details',
+      error: err.message
+    })
+  })
+})
+
+app.post('/request_for_land_sale', (req, res) => {
+  let {_requestor, land_id} = req.body;
+  return integration.requestLandForSale(_requestor, land_id)
+  .then((resp) => {
+    if (resp.status) {
+      return res.status(200).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    } else {
+      return res.status(400).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    }
+  })
+  .catch(err => {
+    return res.status(400).send({
+      message: 'Failed to approve land view request',
+      error: err.message
+    })
+  })
+})
+
+app.post('/accept_land_sale_request', (req, res) => {
+  let {owner, _requestor, land_id, status} = req.body;
+  return integration.ownerDecisionforRaisedRequest(owner, _requestor, land_id, status)
+  .then((resp) => {
+    if (resp.status) {
+      return res.status(200).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    } else {
+      return res.status(400).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    }
+  })
+  .catch(err => {
+    return res.status(400).send({
+      message: 'Failed to approve land view request',
+      error: err.message
+    })
+  })
+})
+
+app.post('/registration', (req, res) => {
+  let {_requestor, land_id, docUri} = req.body;
+  return integration.registrationForLandByBuyer(_requestor, land_id, docUri)
+  .then((resp) => {
+    if (resp.status) {
+      return res.status(200).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    } else {
+      return res.status(400).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    }
+  })
+  .catch(err => {
+    return res.status(400).send({
+      message: 'Failed to approve land view request',
+      error: err.message
+    })
+  })
+})
+
+app.post('/approve_by_l1', (req, res) => {
+  let {_l1, data} = req.body;
+  return integration.approveByL1(_l1, data)
+  .then((resp) => {
+    if (resp.status) {
+      return res.status(200).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    } else {
+      return res.status(400).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    }
+  })
+  .catch(err => {
+    return res.status(400).send({
+      message: 'Failed to approve land view request',
+      error: err.message
+    })
+  })
+})
+
+app.post('/approve_by_l2', (req, res) => {
+  let {_l2, data} = req.body;
+  return integration.approveByL2(_l2, data)
+  .then((resp) => {
+    if (resp.status) {
+      return res.status(200).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    } else {
+      return res.status(400).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    }
+  })
+  .catch(err => {
+    return res.status(400).send({
+      message: 'Failed to approve land view request',
+      error: err.message
+    })
+  })
+})
 
 app.use((req, res) => {
   res.status(404).send({error: `${req.path} not found`});
