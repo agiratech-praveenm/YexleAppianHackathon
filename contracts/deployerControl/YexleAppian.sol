@@ -12,9 +12,7 @@
                                                            | $$      | $$                              
                                                            |__/      |__/                                                                                                                                                                   
 */
-
 pragma solidity ^0.8.9;
-
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -23,6 +21,7 @@ import '@openzeppelin/contracts/utils/introspection/ERC165.sol';
 import './UserContract.sol';
 
 contract YexleAppian is ERC721Burnable, Ownable {
+
     /*
     It saves bytecode to revert on custom errors instead of using require
     statements. We are just declaring these errors for reverting with upon various
@@ -92,12 +91,20 @@ contract YexleAppian is ERC721Burnable, Ownable {
         bool status;
     }
 
+    /**
+        * constructor - ERC721 constructor
+        * @param _metadata - base URI : https://ipfs.io/ipfs
+    */
     constructor(string memory _metadata) ERC721("Yexele Appian", "Yexele_Land"){
         metadataUri = _metadata;
         totalLimit = 0;
         contracturi = "https://ipfs.io/ipfs/QmSf39izZ2iSHeXpSWKsfDEzqkEfHth6f8LuXdW1Ccge3B";
     }
 
+    /**
+        * whitelistApproverL1 - only admin can call this function and set an address as L1 Approver
+        * @param _approverAd - address of L1 Approver
+    */
     function whitelistApproverL1(address _approverAd) external onlyAdmin{
         if(_approverAd == address(0)){ revert zeroAddressNotSupported();}
         if(approverAddress[_approverAd] == true){revert approverAlreadyExist();}
@@ -105,6 +112,10 @@ contract YexleAppian is ERC721Burnable, Ownable {
         L1Approver = _approverAd;
     }
 
+    /**
+        * whitelistApproverL2 - only admin can call this function and set an address as L2 Approver
+        * @param _approverAd - address of L2 Approver
+    */
     function whitelistApproverL2(address _approverAd) external onlyAdmin{
         if(_approverAd == address(0)){ revert zeroAddressNotSupported();}
         if(approverAddress[_approverAd] == true){revert approverAlreadyExist();}
@@ -112,6 +123,11 @@ contract YexleAppian is ERC721Burnable, Ownable {
         L2Approver = _approverAd;
     }
 
+    /**
+        * whitelistUserContract - only admin can call this function and set an address as userContract address
+         and connect this YexleAppian contract with userContract.
+        * @param _userContractAd - address of already deployed userContract
+    */
     function whitelistUserContract(address _userContractAd) external onlyAdmin{
         if(_userContractAd == address(0)){ revert zeroAddressNotSupported();}
         userContract = _userContractAd;
@@ -127,8 +143,16 @@ contract YexleAppian is ERC721Burnable, Ownable {
         contracturi = _contractURI;
         return true;
     } 
+     
 
-    // Done by only admin, 
+     /**
+        * mint - only admin can call this function and mint an ERC721 land token to a user with L1's approval.
+        * @param l1Address - address of L1Approver
+          @param _to - address of the user to whom the land belongs ERC721 land token will be minted to this address
+          @param _tokenId - an integer ID which will represent the ERC721 land token.
+          @param _tokenUri - CID hash that points to the documents that are related to the land.
+        *
+    */
     function mint(address l1Address, address _to, uint256 _tokenId, string memory _tokenUri) external onlyAdmin{
         UserContract useC = UserContract(userContract);
         (bool status) = useC.verifyUser(_to);
@@ -157,21 +181,15 @@ contract YexleAppian is ERC721Burnable, Ownable {
         : '';
     }
 
-    function approveAndTransferLand1(approverData memory _data) external{
-        if(!approverAddress[msg.sender]){ revert notApproverAddress();}
-        if(voteRecord[msg.sender][_data._tokenId]){ revert alreadyApproved();}
-        if(_data.status == true){
-            approverDecision[_data._tokenId][msg.sender] = _data.status;
-            voteRecord[msg.sender][_data._tokenId] = true;
-            approvecount[_data._tokenId] += 1;
-        }
-        if(approvecount[_data._tokenId] == 2){
-            transferFrom(msg.sender, _data._sellingTo, _data._tokenId);
-            emit OwnershipTransferOfLand(msg.sender, _data._sellingTo, _data._tokenId);
-        }
-    }
-
-    //Write -> Land-view-approval: (L1 approver, letting the buyers to access to view).
+    /** 
+        *landDocumentViewRequestApprove - only admin can call this function and allow a requesting user to view another user's 
+           land documents
+          @param l1Address - address of L1 approver
+          @param _requester - address of the user requesting to view someone else's land document with intention of buying it
+          @param tokenId - tokenID of the land documents which the requester is wishing to see
+          @param _status - true or false. true if the admin grants access, false if admin doesn't grant access to requester.
+        *
+    */
     function landDocumentViewRequestApprove(address l1Address, address _requester, uint tokenId, bool _status) external onlyAdmin{
         UserContract useC = UserContract(userContract);
         (bool status) = useC.verifyUser(_requester);
@@ -185,7 +203,12 @@ contract YexleAppian is ERC721Burnable, Ownable {
         }
     }
 
-    // Buyer requests the land for sale to land owner.
+    /**
+        * requestLandForSale - this function can be called only by Admin. This sends a request from buyer to the land owner 
+            expressing the buyer's wish to purchase the land.
+        * @param _requester - this is the address of the buyer who wishes to buy a land.
+        * @param _tokenId - this is the tokenId of the land documents collection that the buyer wishes to buy.
+    */
     function requestLandForSale(address _requester, uint _tokenId) external onlyAdmin{
         UserContract useC = UserContract(userContract);
         (bool status) = useC.verifyUser(_requester);
@@ -196,8 +219,15 @@ contract YexleAppian is ERC721Burnable, Ownable {
             revert("You dont have access");
         }
     }
-
-    //Write -> Buyer decides whether to accept or reject the land.
+     
+    /** 
+        *ownerDecisionforRaisedRequest - this function can be called only by Admin. This function sets if the owner of the land 
+           approves the buyer to purchase his land or not
+        *@param oldOwner - address of the seller/owner of the land
+        *@param _requester - address of the buyer
+        *@param _tokenId - tokenId set to the land documents
+        *@param _status - true or false status. true means the owner of the land approves the buyer to purchase his land. 
+    */
     function ownerDecisionforRaisedRequest(address oldOwner, address _requester, uint _tokenId, bool _status) external onlyAdmin{
         UserContract useC = UserContract(userContract);
         (bool status) = useC.verifyUser(_requester);
@@ -211,7 +241,12 @@ contract YexleAppian is ERC721Burnable, Ownable {
         }
     }
 
-    // Write -> Registration Submission by the requester. (If request is approved by the seller, then buyer)
+    /**
+        *registrationForLandByBuyer - the buyer submits a request to register the land in his name
+        *@param requester - buyer's address
+        *@param tokenId - the tokenId of the land documents that buyer wishes to purchase
+        *@param _DocumentUri - IPFS URI of the land documents that buyer wishes to purchase
+    */
     function registrationForLandByBuyer(address requester, uint tokenId, string memory _DocumentUri) external onlyAdmin{
         require(ownerAcceptLandSales[requester] == true, "registration is not possible");
         require(saleStatus[tokenId] == true, "sale status is false");
@@ -219,6 +254,13 @@ contract YexleAppian is ERC721Burnable, Ownable {
         registrationDocumentStatus[tokenId] = true;
     }
 
+
+    /**
+        *approveByL1 - L1 approver approves the sale first
+        *@param l1Approver - L1 Approver's address
+        *@param _data - a struct approverData containing _sellingTo, tokenId and status. sellingTo is address of the buyer, tokenId is
+          the tokenId of the land documents and status is true or false status stating if L1 approver approves or not.
+    */
     function approveByL1(address l1Approver, approverData memory _data) external onlyAdmin{
         UserContract useC = UserContract(userContract);
         (bool status) = useC.verifyUser(_data._sellingTo);
@@ -236,9 +278,10 @@ contract YexleAppian is ERC721Burnable, Ownable {
     }
 
     /**
-        * approveByL2
-        * @param  l2Approver - wha tis thi
-        * @param _data - sffjdsjfs
+        *approveByL1 - L2 approver approves the sale after L1 approves it.
+        *@param l2Approver - L2 Approver's address
+        *@param _data - a struct approverDataforL2 containing _previousOwner which is seller address, _sellingTo which has 
+         buyer address and status which is true or false status of L2Approver's approval.
     */
     function approveByL2(address l2Approver, approverDataForL2 memory _data) external onlyAdmin{
         UserContract useC = UserContract(userContract);
@@ -256,15 +299,19 @@ contract YexleAppian is ERC721Burnable, Ownable {
             L2statusForL1Approver[_data._sellingTo][_data._tokenId] = _data.status;
         }
         if(approvecount[_data._tokenId] == 2 && L2approverDecision[_data._tokenId]){
-            // Existing owner of NFT needs to provide approve action to let L2 to change ownership
+            // The Owner of NFT needs to provide approve action to let L2 to change ownership
             transferFrom(_data._previousOwner, _data._sellingTo, _data._tokenId);
             _owners[_data._tokenId] = _data._sellingTo;
             emit OwnershipTransferOfLand(_data._previousOwner, _data._sellingTo, _data._tokenId);
         }
     }
-
-    // READ ACTIONS:
-    // View Land Document : Owner of Land, L1 and L2 approver can view.
+    
+    // READ FUNCTIONS:
+    /**
+        *vidwDocumentByOwnerOrLevelApprovers - owner of the land, L1 and L2 approver, these people can view the land documents
+        *@param _docViewRequester - address of the person who wishes to see the land document.
+        *@param _tokenId - tokenId of the land documents
+    */
     function viewDocumentByOwnerOrLevelApprovers(address _docViewRequester, uint _tokenId) external view returns(string memory DocumentUri){
         if(!_exists(_tokenId)) { revert URIQueryForNonexistentToken();}
         if(_docViewRequester == _owners[_tokenId] || _docViewRequester == L1Approver || _docViewRequester == L2Approver){
@@ -274,7 +321,13 @@ contract YexleAppian is ERC721Burnable, Ownable {
         }
     }
 
+
     // View Land Document: (Who ever got access by L1approver can view the doc).
+    /**
+        *vidwDocumentByOwnerOrLevelApprovers - owner of the land, L1 and L2 approver, these people can view the land documents
+        *@param _requester - address of the person who wishes to see the land document.
+        *@param _tokenId - tokenId of the land documents
+    */
     function viewDocumentByRequesters(address _requester, uint _tokenId) external view returns(string memory DocumentURI){
         if(!_exists(_tokenId)) { revert URIQueryForNonexistentToken();}
         if(viewAccessGranted[_requester][_tokenId] && !saleStatus[_tokenId]){
@@ -285,7 +338,11 @@ contract YexleAppian is ERC721Burnable, Ownable {
         }
     }
 
-    // Status: All the buyer request can be checked using this read function.
+    /**
+        *LandRequesterStatus- All the buyer request can be checked using this read function
+        *@param _requester - address of the person who wishes to see the land document.
+        *@param _tokenId - tokenId of the land documents
+    */
     function LandRequesterStatus(address _requester, uint _tokenId) 
     external 
     view 
@@ -298,11 +355,14 @@ contract YexleAppian is ERC721Burnable, Ownable {
         approvecount[_tokenId]);
     }
 
-    // L2 approver status can be checked by the L1 approver.
+    /**
+        *L2ApproverStatusForL1Approver- L2 approver status can be checked by the L1 approver.
+        *@param _requester - address of the person who wishes to see the land document.
+        *@param _tokenId - tokenId of the land documents
+    */
     function L2ApproverStatusForL1Approver(address _requester, uint _tokenId) external view returns(bool){
         return  L2statusForL1Approver[_requester][_tokenId];
     }
-
     /**
         * supportsInterface
         * @param interfaceId Pass interfaceId, to let users know whether the ERC standard is used in this contract or not
@@ -311,10 +371,17 @@ contract YexleAppian is ERC721Burnable, Ownable {
         return interfaceId == IID_IERC721 || super.supportsInterface(interfaceId);
     }
 
+    /**
+        * contractURI()
+        * Get the contract URI, which can be helpful for royalty setup with opensea. 
+    */
     function contractURI() public view returns (string memory) {
         return contracturi;
     }
 
+    /**
+        * _baseURI - returns the base IPFS URI where the land documents are stored with their unique CID
+     */
     function _baseURI() internal pure override returns (string memory) {
         return "https://ipfs.io/ipfs/";
     }

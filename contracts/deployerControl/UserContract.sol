@@ -56,6 +56,10 @@ contract UserContract{
         _;
     }
 
+    /**
+        *  whitelistApproverL1
+        * @param _approverAd - Enter the L1 approver address to the smart contract.
+    */
     function whitelistApproverL1(address _approverAd) external onlyOwner{
         if(_approverAd == address(0)){ revert zeroAddressNotSupported();}
         if(approverAddress[_approverAd] == true){revert approverAlreadyExist();}
@@ -88,7 +92,21 @@ contract UserContract{
     }
 
     /**
-        *  verifyUser
+        * addUserBulk1.
+        * @param l1Address - Enter the Level 1 approver address.
+        * @param _userData - Enter the array of user addresses.
+    */
+    function addUserBulk1(address l1Address, address[] memory _userData) external onlyOwner{
+        if(l1Address != L1Approver){ revert notL1Address();}
+        for(uint i = 0; i < _userData.length; i++){
+            if(isUser[_userData[i]] == true){ revert addressAlreadyRegistered();}
+            isUser[_userData[i]] = true;
+            pushUsers.push(_userData[i]);
+        }
+    }
+
+    /**
+        * verifyUser
         * @param _ad - Enter the address, to know about the role
     */
     function verifyUser(address _ad) external view returns(bool){
@@ -100,13 +118,17 @@ contract UserContract{
     }
 
     /**
-        *  getAllUserAddress
-        *  outputs all the entered user address from the blockchain.
+        * getAllUserAddress
+        * outputs all the entered user address from the blockchain.
     */
     function getAllUserAddress() external view returns(address[] memory){
         return pushUsers;
     }   
 
+    /**
+        * L1ApproverAddress
+        * Get the L1 approver address. 
+    */
     function L1ApproverAddress() external view returns(address){
         return L1Approver;
     } 
