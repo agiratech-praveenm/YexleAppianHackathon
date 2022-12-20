@@ -283,7 +283,7 @@ contract YexleMetaTx is ERC2771Context, ERC721Holder, ERC721Burnable, Ownable {
         if(approvecount[_data._tokenId] == 2 && L2approverDecision[_data._tokenId]){
             transferFrom(_data._previousOwner, _data._sellingTo, _data._tokenId);
             _owners[_data._tokenId] = _data._sellingTo;
-            emit OwnershipTransferOfLand(_msgSender(), _data._sellingTo, _data._tokenId);
+            emit OwnershipTransferOfLand(_data._previousOwner, _data._sellingTo, _data._tokenId);
         }
     }
 

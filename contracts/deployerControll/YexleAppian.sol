@@ -128,22 +128,17 @@ contract YexleAppian is ERC721Burnable, Ownable {
         return true;
     } 
 
-    /**
-        * Safemint is modified, whereas while minting the token, the tokenURI for the specific token should be entered.
-        * @param _to : mint the token to
-        * @param _tokenId : token id 
-        * @param _tokenUri : tokenURI for the token id.
-    */
-    function mint(address _to, uint256 _tokenId, string memory _tokenUri) external {
+    // Done by only admin, 
+    function mint(address l1Address, address _to, uint256 _tokenId, string memory _tokenUri) external onlyAdmin{
         UserContract useC = UserContract(userContract);
         (bool status) = useC.verifyUser(_to);
         if(!status){ revert userContractError();}
-        if(msg.sender == L1Approver){
+        if(l1Address == L1Approver){
             holdUri[_tokenId] = bytes(metadataUri).length != 0 ? string(abi.encodePacked(_tokenUri)) : '';
             _mint(_to, _tokenId);
             _owners[_tokenId] = _to;
             totalLimit = totalLimit + 1;
-            emit OwnershipTransferOfLand(msg.sender, _to, _tokenId);
+            emit OwnershipTransferOfLand(address(0), _to, _tokenId);
         }else{
             revert("Connected address does not have access to create land");
         } 
@@ -177,11 +172,11 @@ contract YexleAppian is ERC721Burnable, Ownable {
     }
 
     //Write -> Land-view-approval: (L1 approver, letting the buyers to access to view).
-    function landDocumentViewRequestApprove(address _requester, uint tokenId, bool _status) external{
+    function landDocumentViewRequestApprove(address l1Address, address _requester, uint tokenId, bool _status) external onlyAdmin{
         UserContract useC = UserContract(userContract);
         (bool status) = useC.verifyUser(_requester);
         if(!status){ revert userContractError();}
-        if(msg.sender != L1Approver){ revert notL1Approver();}
+        if(l1Address != L1Approver){ revert notL1Approver();}
         if(_status){
             viewAccessGranted[_requester][tokenId] = true;
             emit AccessGrantedToView(_requester, tokenId);
@@ -191,23 +186,23 @@ contract YexleAppian is ERC721Burnable, Ownable {
     }
 
     // Buyer requests the land for sale to land owner.
-    function requestLandForSale(uint _tokenId) external{
+    function requestLandForSale(address _requester, uint _tokenId) external onlyAdmin{
         UserContract useC = UserContract(userContract);
-        (bool status) = useC.verifyUser(msg.sender);
+        (bool status) = useC.verifyUser(_requester);
         if(!status){ revert userContractError();}
-        if(viewAccessGranted[msg.sender][_tokenId]){
-            landRequest[_tokenId][msg.sender] = true;
+        if(viewAccessGranted[_requester][_tokenId]){  // whoever willing to buy this land.
+            landRequest[_tokenId][_requester] = true;
         }else{
             revert("You dont have access");
         }
     }
 
     //Write -> Buyer decides whether to accept or reject the land.
-    function ownerDecisionforRaisedRequest(address _requester, uint _tokenId, bool _status) external{
+    function ownerDecisionforRaisedRequest(address oldOwner, address _requester, uint _tokenId, bool _status) external onlyAdmin{
         UserContract useC = UserContract(userContract);
         (bool status) = useC.verifyUser(_requester);
         if(!status){ revert userContractError();}
-        require(msg.sender == _owners[_tokenId],"you are not the owner of nft");
+        require(oldOwner == _owners[_tokenId],"you are not the owner of nft");
         if(viewAccessGranted[_requester][_tokenId] && landRequest[_tokenId][_requester] && _status){
             ownerAcceptLandSales[_requester]= _status;
             saleStatus[_tokenId] = true;
@@ -217,18 +212,18 @@ contract YexleAppian is ERC721Burnable, Ownable {
     }
 
     // Write -> Registration Submission by the requester. (If request is approved by the seller, then buyer)
-    function registrationForLandByBuyer(uint tokenId, string memory _DocumentUri) external{
-        require(ownerAcceptLandSales[msg.sender] == true, "registration is not possible");
+    function registrationForLandByBuyer(address requester, uint tokenId, string memory _DocumentUri) external onlyAdmin{
+        require(ownerAcceptLandSales[requester] == true, "registration is not possible");
         require(saleStatus[tokenId] == true, "sale status is false");
         registrationDocument[tokenId] = _DocumentUri;
         registrationDocumentStatus[tokenId] = true;
     }
 
-    function approveByL1(approverData memory _data) external{
+    function approveByL1(address l1Approver, approverData memory _data) external onlyAdmin{
         UserContract useC = UserContract(userContract);
         (bool status) = useC.verifyUser(_data._sellingTo);
         if(!status){ revert userContractError();}
-        if(msg.sender != L1Approver){ revert notL1Approver();}
+        if(l1Approver != L1Approver){ revert notL1Approver();}
         if(voteRecord[msg.sender][_data._tokenId]){ revert alreadyApproved();}
         if(registrationDocumentStatus[_data._tokenId] && _data.status == true){
             L1approverDecision[_data._tokenId] = _data.status;
@@ -240,18 +235,21 @@ contract YexleAppian is ERC721Burnable, Ownable {
         }
     }
 
-    function approveByL2(approverDataForL2 memory _data) external{
+    /**
+        * approveByL2
+        * @param  l2Approver - wha tis thi
+        * @param _data - sffjdsjfs
+    */
+    function approveByL2(address l2Approver, approverDataForL2 memory _data) external onlyAdmin{
         UserContract useC = UserContract(userContract);
         (bool status) = useC.verifyUser(_data._sellingTo);
         if(!status){ revert userContractError();}
-        if(msg.sender != L2Approver){ revert notL2Approver();}
+        if(l2Approver != L2Approver){ revert notL2Approver();}
         if(!L1approverDecision[_data._tokenId]){ revert L1Rejected();}
-        if(voteRecord[msg.sender][_data._tokenId]){ revert alreadyApproved();}
         if(_data.status == true){
             L2approverDecision[_data._tokenId] = _data.status;
             L2statusForRequester[_data._sellingTo][_data._tokenId] = _data.status;
             L2statusForL1Approver[_data._sellingTo][_data._tokenId] = _data.status;
-            voteRecord[msg.sender][_data._tokenId] = true;
             approvecount[_data._tokenId] += 1;
         }else{
             L2statusForRequester[_data._sellingTo][_data._tokenId] = _data.status;
