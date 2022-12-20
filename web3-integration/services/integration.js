@@ -5,6 +5,7 @@ const regABI = require('./abi/registration.json');
 const PINATA_API_KEY = process.env.PINATA_API_KEY;
 const PINATA_API_SECRET = process.env.PINATA_API_SECRET;
 const WEB3_PROVIDER = process.env.WEB3_PROVIDER;
+const PUBLIC_KEY = process.env.PUBLIC_KEY;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const USER_CONTRACT = process.env.USER_CONTRACT;
 const REG_CONTRACT = process.env.REG_CONTRACT;
@@ -29,7 +30,7 @@ const initiateUserContract = function() {
   return {userContract, userSigner, provider};
 }
 
-const initiateRegistrationContract = function() {
+const initiateRegistrationContract = function(private_key = null) {
   const provider = new ethers.providers.JsonRpcProvider(WEB3_PROVIDER);
 
   const regContract = new ethers.Contract(
@@ -38,7 +39,7 @@ const initiateRegistrationContract = function() {
     provider
   );
 
-  let wallet = new ethers.Wallet(PRIVATE_KEY);
+  let wallet = new ethers.Wallet(private_key || PRIVATE_KEY);
   let walletSigner = wallet.connect(provider);
   const regSigner = regContract.connect(walletSigner);
   return {regContract, regSigner, provider};
@@ -176,10 +177,54 @@ const approveByL1 = async (_l1, data) => {
   .catch(err => {return err;})
 }
 
-const approveByL2 = async (_l2, data) => {
+const transferFee = async (toAddress) => {
+  const provider = new ethers.providers.JsonRpcProvider(WEB3_PROVIDER);
+
+  let wallet = new ethers.Wallet(PRIVATE_KEY);
+  let walletSigner = wallet.connect(provider);
+  const tx = {
+    from: PUBLIC_KEY,
+    to: toAddress,
+    value: ethers.utils.parseEther('0.001'),
+    gasLimit: ethers.utils.hexlify("0x100000"), // 100000
+    gasPrice: ethers.utils.hexlify(parseInt(await provider.getGasPrice())),
+  };
+  return walletSigner.sendTransaction(tx)
+  .then((transaction) => {
+    return transaction.wait();
+  })
+  .catch(function(err) {
+    console.log('error: ', err);
+  });
+}
+
+const approve = async (_l2, land_id, owner) => {
+  try {
+    await transferFee(owner.public_key);
+    let {regSigner, provider} = initiateRegistrationContract(owner.private_key);
+    return regSigner.approve(_l2, land_id, {
+      gasLimit: ethers.utils.hexlify(1000000),
+    })
+    .then(transaction => {
+      return provider.waitForTransaction(transaction.hash);
+    })
+    .then(receipt => {
+      return receipt;
+    })
+    .catch(err => {return err;})
+  } catch(err) {
+    console.log(err);
+    return err;
+  }
+}
+
+const approveByL2 = async (_l2, data, owner) => {
   let {regSigner, provider} = initiateRegistrationContract();
-  return regSigner.approveByL2(_l2, data, {
-    gasLimit: ethers.utils.hexlify(1000000),
+  return approve(_l2, data._tokenId, owner)
+  .then(() => {
+    return regSigner.approveByL2(_l2, data, {
+      gasLimit: ethers.utils.hexlify(1000000),
+    })
   })
   .then(transaction => {
     return provider.waitForTransaction(transaction.hash);
