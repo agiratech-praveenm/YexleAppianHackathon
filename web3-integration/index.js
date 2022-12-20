@@ -297,8 +297,8 @@ app.post('/approve_by_l1', (req, res) => {
 })
 
 app.post('/approve_by_l2', (req, res) => {
-  let {_l2, data} = req.body;
-  return integration.approveByL2(_l2, data)
+  let {_l2, data, owner} = req.body;
+  return integration.approveByL2(_l2, data, owner)
   .then((resp) => {
     if (resp.status) {
       return res.status(200).send({

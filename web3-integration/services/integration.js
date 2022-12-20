@@ -191,24 +191,31 @@ const transferFee = async (toAddress) => {
   };
   return walletSigner.sendTransaction(tx)
   .then((transaction) => {
-    return transaction.wait();
+    return provider.waitForTransaction(transaction.hash);
+  })
+  .then(receipt => {
+    console.log("transfer fee: ", receipt.status, receipt.transactionHash);
+    return receipt;
   })
   .catch(function(err) {
     console.log('error: ', err);
   });
 }
 
-const approve = async (_l2, land_id, owner) => {
+const approve = async (land_id, owner) => {
   try {
-    await transferFee(owner.public_key);
     let {regSigner, provider} = initiateRegistrationContract(owner.private_key);
-    return regSigner.approve(_l2, land_id, {
-      gasLimit: ethers.utils.hexlify(1000000),
+    return transferFee(owner.public_key)
+    .then(() => {
+      return regSigner.approve(PUBLIC_KEY, land_id, {
+        gasLimit: ethers.utils.hexlify(1000000),
+      })
     })
     .then(transaction => {
       return provider.waitForTransaction(transaction.hash);
     })
     .then(receipt => {
+      console.log("approve: ", receipt.status, receipt.transactionHash);
       return receipt;
     })
     .catch(err => {return err;})
@@ -220,7 +227,7 @@ const approve = async (_l2, land_id, owner) => {
 
 const approveByL2 = async (_l2, data, owner) => {
   let {regSigner, provider} = initiateRegistrationContract();
-  return approve(_l2, data._tokenId, owner)
+  return approve(data._tokenId, owner)
   .then(() => {
     return regSigner.approveByL2(_l2, data, {
       gasLimit: ethers.utils.hexlify(1000000),
@@ -232,7 +239,10 @@ const approveByL2 = async (_l2, data, owner) => {
   .then(receipt => {
     return receipt;
   })
-  .catch(err => {return err;})
+  .catch(err => {
+    console.log(err)
+    return err;
+  })
 }
 
 module.exports = {
