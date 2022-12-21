@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 require("dotenv").config();
 const axios = require("axios");
 const FormData = require('form-data');
@@ -6,6 +7,7 @@ const fileupload = require("express-fileupload");
 const integration = require('./services/integration');
 
 const app = express();
+app.use(cors());
 // // Config env file
 // dotEnv.config();
 app.use(express.json());
