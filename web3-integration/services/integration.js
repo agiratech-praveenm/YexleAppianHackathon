@@ -55,6 +55,28 @@ const createAddress = function() {
 }
 
 // write actions with the flow
+const whitelistUserApproverL1 = async (l1Address) => {
+  if (isAddress(l1Address)) {
+    let { userSigner, provider } = initiateUserContract();
+    return userSigner.whitelistApproverL1(l1Address, {
+      gasLimit: ethers.utils.hexlify(1000000),
+      gasPrice: ethers.utils.hexlify(parseInt(await provider.getGasPrice()) * 2)
+    })
+    .then(transaction => {
+      return provider.waitForTransaction(transaction.hash);
+    })
+    .then(receipt => {
+      return receipt;
+    })
+    .catch(err => {
+      console.log(err);
+      return err;
+    })
+  } else {
+    return new Error('Invalid address')
+  }
+}
+
 const addUser = async (addressDetails) => {
   if (isAddress(addressDetails._l1) && isAddress(addressDetails._ad)) {
     let { userSigner, provider } = initiateUserContract();
@@ -85,6 +107,50 @@ const addUserBulk = async (l1, addresses) => {
     return receipt;
   })
   .catch(err => {return err;})
+}
+
+const whitelistApproverL1 = async (l1Address) => {
+  if (isAddress(l1Address)) {
+    let {regSigner, provider} = initiateRegistrationContract();
+    return regSigner.whitelistApproverL1(l1Address, {
+      gasLimit: ethers.utils.hexlify(1000000),
+      gasPrice: ethers.utils.hexlify(parseInt(await provider.getGasPrice()) * 2)
+    })
+    .then(transaction => {
+      return provider.waitForTransaction(transaction.hash);
+    })
+    .then(receipt => {
+      return receipt;
+    })
+    .catch(err => {
+      console.log(err);
+      return err;
+    })
+  } else {
+    return new Error('Invalid address')
+  }
+}
+
+const whitelistApproverL2 = async (l1Address) => {
+  if (isAddress(l1Address)) {
+    let {regSigner, provider} = initiateRegistrationContract();
+    return regSigner.whitelistApproverL2(l1Address, {
+      gasLimit: ethers.utils.hexlify(1000000),
+      gasPrice: ethers.utils.hexlify(parseInt(await provider.getGasPrice()) * 2)
+    })
+    .then(transaction => {
+      return provider.waitForTransaction(transaction.hash);
+    })
+    .then(receipt => {
+      return receipt;
+    })
+    .catch(err => {
+      console.log(err);
+      return err;
+    })
+  } else {
+    return new Error('Invalid address')
+  }
 }
 
 const mint = async (_l1, _to, land_id, token_ipfs_hash) => {
@@ -245,10 +311,86 @@ const approveByL2 = async (_l2, data, owner) => {
   })
 }
 
+// read actions
+const L1ApproverAddress = async () => {
+  let { userContract, provider } = initiateUserContract();
+  return userContract.L1ApproverAddress()
+  .then(l1 => {
+    return l1;
+  })
+  .catch(err => {return err;})
+}
+
+const verifyUser = async (address) => {
+  if (isAddress(address)) {
+    let { userContract, provider } = initiateUserContract();
+    return userContract.verifyUser(address)
+    .then(status => {
+      return status;
+    })
+    .catch(err => {return err;})
+  } else {
+    return new Error('Invalid address')
+  }
+}
+
+const getAllUserAddress = async () => {
+  let { userContract, provider } = initiateUserContract();
+  return userContract.getAllUserAddress()
+  .then(users => {
+    return users;
+  })
+  .catch(err => {return err;})
+}
+
+const metadataUri = async () => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.metadataUri()
+  .then(uri => {
+    return uri;
+  })
+  .catch(err => {return err;})
+}
+
+const viewDocumentByOwnerOrLevelApprovers = async (address, land_id) => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.viewDocumentByOwnerOrLevelApprovers(address, land_id)
+  .then(uri => {
+    return uri;
+  })
+  .catch(err => {return err;})
+}
+
+const ownerOf = async (land_id) => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.ownerOf(parseInt(land_id))
+  .then(owner => {
+    return owner;
+  })
+  .catch(err => {return err;})
+}
+
+const LandRequesterStatus = (address, land_id) => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.LandRequesterStatus(address, land_id)
+  .then(([ViewDocumentStatus, L1ApproverStatusForRequester, L2ApproverstatusForRequester, approveCountForTokenIdByApprovers]) => {
+    return {
+      viewDocumentStatus: ViewDocumentStatus,
+      l1ApproverStatusForRequester: L1ApproverStatusForRequester,
+      l2ApproverstatusForRequester: L2ApproverstatusForRequester,
+      approveCountForTokenIdByApprovers: parseInt(approveCountForTokenIdByApprovers)
+    };
+  })
+  .catch(err => {return err;})
+}
+
 module.exports = {
   createAddress,
+  whitelistUserApproverL1,
   addUser,
   addUserBulk,
+  whitelistApproverL1,
+  whitelistApproverL2,
   mint,
   landDocumentViewRequestApprove,
   viewDocumentByRequesters,
@@ -256,5 +398,12 @@ module.exports = {
   ownerDecisionforRaisedRequest,
   registrationForLandByBuyer,
   approveByL1,
-  approveByL2
+  approveByL2,
+  L1ApproverAddress,
+  verifyUser,
+  getAllUserAddress,
+  metadataUri,
+  viewDocumentByOwnerOrLevelApprovers,
+  ownerOf,
+  LandRequesterStatus
 }

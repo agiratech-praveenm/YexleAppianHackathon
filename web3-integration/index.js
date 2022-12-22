@@ -24,6 +24,30 @@ app.get("/generate_wallet", async (req, res) => {
   res.send(integration.createAddress());
 })
 
+app.post('/user/whitelist_l1', (req, res) => {
+  return integration.whitelistUserApproverL1(req.body.l1)
+  .then((resp) => {
+    if (resp.status) {
+      return res.status(200).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    } else {
+      return res.status(400).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    }
+  })
+  .catch(err => {
+    console.log(err)
+    return res.status(400).send({
+      message: 'User creation failed',
+      error: err.message
+    })
+  })
+})
+
 app.post('/user/create', (req, res) => {
   return integration.addUser(req.body)
   .then((resp) => {
@@ -66,6 +90,54 @@ app.post('/user/bulk_create', (req, res) => {
   .catch(err => {
     return res.status(400).send({
       message: 'Land creation failed',
+      error: err.message
+    })
+  })
+})
+
+app.post('/whitelist_l1_approver', (req, res) => {
+  return integration.whitelistApproverL1(req.body.l1)
+  .then((resp) => {
+    if (resp.status) {
+      return res.status(200).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    } else {
+      return res.status(400).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    }
+  })
+  .catch(err => {
+    console.log(err)
+    return res.status(400).send({
+      message: 'User creation failed',
+      error: err.message
+    })
+  })
+})
+
+app.post('/whitelist_l2_approver', (req, res) => {
+  return integration.whitelistApproverL2(req.body.l2)
+  .then((resp) => {
+    if (resp.status) {
+      return res.status(200).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    } else {
+      return res.status(400).send({
+        status: resp.status,
+        transaction_hash: resp.transactionHash
+      })
+    }
+  })
+  .catch(err => {
+    console.log(err)
+    return res.status(400).send({
+      message: 'User creation failed',
       error: err.message
     })
   })
@@ -321,6 +393,126 @@ app.post('/approve_by_l2', (req, res) => {
     })
   })
 })
+
+app.get('/user/l1_approver', (req, res) => {
+  return integration.L1ApproverAddress()
+  .then((resp) => {
+    return res.status(200).send({
+      l1_approver: resp
+    })
+  })
+  .catch(err => {
+    console.log(err)
+    return res.status(400).send({
+      error: err.message
+    })
+  })
+})
+
+app.get('/user/:address', (req, res) => {
+  return integration.verifyUser(req.params.address)
+  .then((resp) => {
+    return res.status(200).send({
+      status: resp
+    })
+  })
+  .catch(err => {
+    console.log(err)
+    return res.status(400).send({
+      error: err.message
+    })
+  })
+})
+
+app.get('/users', (req, res) => {
+  return integration.getAllUserAddress()
+  .then((resp) => {
+    return res.status(200).send({
+      users: resp
+    })
+  })
+  .catch(err => {
+    console.log(err)
+    return res.status(400).send({
+      error: err.message
+    })
+  })
+})
+
+app.get('/metadata_uri', (req, res) => {
+  return integration.metadataUri()
+  .then((resp) => {
+    return res.status(200).send({
+      uri: resp
+    })
+  })
+  .catch(err => {
+    console.log(err)
+    return res.status(400).send({
+      error: err.message
+    })
+  })
+})
+
+app.get('/land/owner/:land_id', (req, res) => {
+  return integration.ownerOf(req.params.land_id)
+  .then((resp) => {
+    return res.status(200).send({
+      owner: resp
+    })
+  })
+  .catch(err => {
+    console.log(err)
+    return res.status(400).send({
+      error: err.message
+    })
+  })
+})
+
+app.get('/land/requester/:land_id/:viewer', (req, res) => {
+  return integration.viewDocumentByRequesters(req.params.viewer, req.params.land_id)
+  .then((resp) => {
+    return res.status(200).send({
+      uri: resp
+    })
+  })
+  .catch(err => {
+    return res.status(400).send({
+      error: err.reason || err.message
+    })
+  })
+})
+
+app.get('/land/requester_status/:land_id/:viewer', (req, res) => {
+  return integration.LandRequesterStatus(req.params.viewer, req.params.land_id)
+  .then((resp) => {
+    return res.status(200).send({
+      status: resp
+    })
+  })
+  .catch(err => {
+    console.log(err)
+    return res.status(400).send({
+      error: err.message
+    })
+  })
+})
+
+app.get('/land/:land_id/:viewer', (req, res) => {
+  return integration.viewDocumentByOwnerOrLevelApprovers(req.params.viewer, req.params.land_id)
+  .then((resp) => {
+    return res.status(200).send({
+      uri: resp
+    })
+  })
+  .catch(err => {
+    console.log(err)
+    return res.status(400).send({
+      error: err.message
+    })
+  })
+})
+
 
 app.use((req, res) => {
   res.status(404).send({error: `${req.path} not found`});
