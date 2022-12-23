@@ -41,8 +41,8 @@ contract YexleAppian is ERC721Burnable, Ownable {
     error userContractError();
    
     address private userContract;
-    address private L1Approver;
-    address private L2Approver;
+    address public L1Approver;
+    address public L2Approver;
     string private contracturi;
     string public metadataUri;
     uint private l1Appovals;
@@ -153,8 +153,7 @@ contract YexleAppian is ERC721Burnable, Ownable {
         return true;
     } 
      
-
-     /**
+    /**
         * mint - only admin can call this function and mint an ERC721 land token to a user with L1's approval.
         * @param l1Address - address of L1Approver
           @param _to - address of the user to whom the land belongs ERC721 land token will be minted to this address
