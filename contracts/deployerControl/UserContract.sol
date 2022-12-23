@@ -33,6 +33,7 @@ contract UserContract{
     address[] private adminAddresses;
     address public owner;
     address private L1Approver;
+    uint private totalUsersCount;
     
     mapping(address => bool) private isUser;
     mapping(address => bool) private adminAddress;
@@ -75,6 +76,7 @@ contract UserContract{
         if(_data._l1 != L1Approver){ revert notL1Address();}
         if(isUser[_data._ad] == true){ revert addressAlreadyRegistered();}
         isUser[_data._ad] = true;
+        totalUsersCount += 1;
         pushUsers.push(_data._ad);
     }
 
@@ -87,6 +89,7 @@ contract UserContract{
         for(uint i = 0; i < _userData.length; i++){
             if(isUser[_userData[i]._ad] == true){ revert addressAlreadyRegistered();}
             isUser[_userData[i]._ad] = true;
+            totalUsersCount += 1;
             pushUsers.push(_userData[i]._ad);
         }
     }
@@ -101,6 +104,7 @@ contract UserContract{
         for(uint i = 0; i < _userData.length; i++){
             if(isUser[_userData[i]] == true){ revert addressAlreadyRegistered();}
             isUser[_userData[i]] = true;
+            totalUsersCount += 1;
             pushUsers.push(_userData[i]);
         }
     }
@@ -131,5 +135,12 @@ contract UserContract{
     */
     function L1ApproverAddress() external view returns(address){
         return L1Approver;
-    } 
+    }
+
+    /**
+        * UserCounts  
+    */ 
+    function UserCounts() external view returns(uint totalCountOfUsers){
+        return totalUsersCount;
+    }
 }

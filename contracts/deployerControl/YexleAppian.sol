@@ -45,6 +45,10 @@ contract YexleAppian is ERC721Burnable, Ownable {
     address private L2Approver;
     string private contracturi;
     string public metadataUri;
+    uint private l1Appovals;
+    uint private l2Appovals;
+    uint private totalLands;
+    uint private completedRegistration;
     uint private totalLimit;
     bytes4 public constant IID_IERC721 = type(IERC721).interfaceId;
     
@@ -77,6 +81,11 @@ contract YexleAppian is ERC721Burnable, Ownable {
     mapping(address => mapping(uint => bool)) private L2statusForL1Approver;
     mapping(uint => bool) private L1approverDecision;
     mapping(uint => bool) private L2approverDecision;
+    /**
+        * If registrationProcess[tokenId] = false; // Then land is still in process.
+        * If registrationProcess[tokenId] = true; // Then land registration is completed.
+    */
+    mapping(uint => bool) private registrationProcess;
     
     struct approverData{
         address _sellingTo;
@@ -161,6 +170,7 @@ contract YexleAppian is ERC721Burnable, Ownable {
             holdUri[_tokenId] = bytes(metadataUri).length != 0 ? string(abi.encodePacked(_tokenUri)) : '';
             _mint(_to, _tokenId);
             _owners[_tokenId] = _to;
+            totalLands += 1;
             totalLimit = totalLimit + 1;
             emit OwnershipTransferOfLand(address(0), _to, _tokenId);
         }else{
@@ -271,6 +281,7 @@ contract YexleAppian is ERC721Burnable, Ownable {
             L1approverDecision[_data._tokenId] = _data.status;
             voteRecord[msg.sender][_data._tokenId] = true;
             L1statusForRequester[_data._sellingTo][_data._tokenId] = true;
+            l1Appovals += 1;
             approvecount[_data._tokenId] += 1;
         }else{
             L1statusForRequester[_data._sellingTo][_data._tokenId] = false;
@@ -282,7 +293,7 @@ contract YexleAppian is ERC721Burnable, Ownable {
         *@param l2Approver - L2 Approver's address
         *@param _data - a struct approverDataforL2 containing _previousOwner which is seller address, _sellingTo which has 
          buyer address and status which is true or false status of L2Approver's approval.
-    */
+    */ 
     function approveByL2(address l2Approver, approverDataForL2 memory _data) external onlyAdmin{
         UserContract useC = UserContract(userContract);
         (bool status) = useC.verifyUser(_data._sellingTo);
@@ -293,6 +304,9 @@ contract YexleAppian is ERC721Burnable, Ownable {
             L2approverDecision[_data._tokenId] = _data.status;
             L2statusForRequester[_data._sellingTo][_data._tokenId] = _data.status;
             L2statusForL1Approver[_data._sellingTo][_data._tokenId] = _data.status;
+            l2Appovals += 1;
+            completedRegistration += 1;
+            registrationProcess[_data._tokenId] = true; // Then land registration is completed.
             approvecount[_data._tokenId] += 1;
         }else{
             L2statusForRequester[_data._sellingTo][_data._tokenId] = _data.status;
@@ -363,6 +377,42 @@ contract YexleAppian is ERC721Burnable, Ownable {
     function L2ApproverStatusForL1Approver(address _requester, uint _tokenId) external view returns(bool){
         return  L2statusForL1Approver[_requester][_tokenId];
     }
+
+    /**
+        * L1ApprovalCounts 
+    */
+    function L1ApprovalCounts() external view returns(uint totalL1ApprovalCounts){
+        return l1Appovals;
+    }
+
+    /**
+        * L2ApprovalCounts 
+    */
+    function L2ApprovalCounts() external view returns(uint totalL2ApprovalCounts){
+        return l2Appovals;
+    }
+
+    /**
+        * LandCounts 
+    */
+    function LandCounts() external view returns(uint totalLandCount){
+        return totalLands;
+    }
+
+    /**
+        * LandRegistrationStatus
+    */
+    function LandRegistrationStatus(uint _landId) external view returns(bool registrationStatus){
+        return registrationProcess[_landId];
+    }
+
+    /**
+        * CompletedRegistrations
+    */
+    function completedRegistrations() external view returns(uint totalCompletedRegistrations){
+        return completedRegistration;
+    }
+
     /**
         * supportsInterface
         * @param interfaceId Pass interfaceId, to let users know whether the ERC standard is used in this contract or not
