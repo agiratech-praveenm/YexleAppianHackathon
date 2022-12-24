@@ -167,6 +167,29 @@ const mint = async (_l1, _to, land_id, token_ipfs_hash) => {
   .catch(err => {return err;})
 }
 
+const setTokenURI = async (land_id, token_ipfs_hash, owner) => {
+  try {
+    let {regSigner, provider} = initiateRegistrationContract(owner.private_key);
+    return transferFee(owner.public_key)
+    .then(() => {
+      return regSigner.setTokenURI(land_id, token_ipfs_hash, {
+        gasLimit: ethers.utils.hexlify(1000000),
+      })
+    })
+    .then(transaction => {
+      return provider.waitForTransaction(transaction.hash);
+    })
+    .then(receipt => {
+      console.log("approve: ", receipt.status, receipt.transactionHash);
+      return receipt;
+    })
+    .catch(err => {return err;})
+  } catch(err) {
+    console.log(err);
+    return err;
+  }
+}
+
 const landDocumentViewRequestApprove = async (_l1, _requestor, land_id, status) => {
   let {regSigner, provider} = initiateRegistrationContract();
   return regSigner.landDocumentViewRequestApprove(_l1, _requestor, land_id, status, {
@@ -384,6 +407,105 @@ const LandRequesterStatus = (address, land_id) => {
   .catch(err => {return err;})
 }
 
+const UserCounts = () => {
+  let { userContract, provider } = initiateUserContract();
+  return userContract.UserCounts()
+  .then(users => {
+    return parseInt(users);
+  })
+  .catch(err => {return err;})
+}
+
+const L1Approver = () => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.L1Approver()
+  .then(approver => {
+    return approver;
+  })
+  .catch(err => {return err;})
+}
+
+const L2Approver = () => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.L2Approver()
+  .then(approver => {
+    return approver;
+  })
+  .catch(err => {return err;})
+}
+
+const L1ApprovalCounts = () => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.L1ApprovalCounts()
+  .then(count => {
+    return parseInt(count);
+  })
+  .catch(err => {return err;})
+}
+
+const L2ApprovalCounts = () => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.L2ApprovalCounts()
+  .then(count => {
+    return parseInt(count);
+  })
+  .catch(err => {return err;})
+}
+
+const LandCounts = () => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.LandCounts()
+  .then(count => {
+    return parseInt(count);
+  })
+  .catch(err => {return err;})
+}
+
+const LandRegistrationStatus = (land_id) => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.LandRegistrationStatus(parseInt(land_id))
+  .then(status => {
+    return status;
+  })
+  .catch(err => {return err;})
+}
+
+const completedRegistrations = () => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.completedRegistrations()
+  .then(count => {
+    return parseInt(count);
+  })
+  .catch(err => {return err;})
+}
+
+const returnAllUriForLandOwner = (address) => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.returnAllUriForLandOwner(address)
+  .then(cids => {
+    return cids;
+  })
+  .catch(err => {return err;})
+}
+
+const noOfRequestersInfoToViewDoc = (land_id) => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.noOfRequestersInfoToViewDoc(parseInt(land_id))
+  .then(count => {
+    return parseInt(count);
+  })
+  .catch(err => {return err;})
+}
+
+const allRequesterAddressForViewDocument = (land_id) => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.allRequesterAddressForViewDocument(parseInt(land_id))
+  .then(requesters => {
+    return requesters;
+  })
+  .catch(err => {return err;})
+}
+
 module.exports = {
   createAddress,
   whitelistUserApproverL1,
@@ -392,6 +514,7 @@ module.exports = {
   whitelistApproverL1,
   whitelistApproverL2,
   mint,
+  setTokenURI,
   landDocumentViewRequestApprove,
   viewDocumentByRequesters,
   requestLandForSale,
@@ -405,5 +528,16 @@ module.exports = {
   metadataUri,
   viewDocumentByOwnerOrLevelApprovers,
   ownerOf,
-  LandRequesterStatus
+  LandRequesterStatus,
+  UserCounts,
+  L1Approver,
+  L2Approver,
+  L1ApprovalCounts,
+  L2ApprovalCounts,
+  LandCounts,
+  LandRegistrationStatus,
+  completedRegistrations,
+  returnAllUriForLandOwner,
+  noOfRequestersInfoToViewDoc,
+  allRequesterAddressForViewDocument
 }
