@@ -235,6 +235,58 @@
         "type": "function"
     },
     {
+        "inputs": [],
+        "name": "L1ApprovalCounts",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "totalL1ApprovalCounts",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "L1Approver",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "L2ApprovalCounts",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "totalL2ApprovalCounts",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "L2Approver",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
         "inputs": [
             {
                 "internalType": "address",
@@ -252,6 +304,38 @@
             {
                 "internalType": "bool",
                 "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "LandCounts",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "totalLandCount",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "_landId",
+                "type": "uint256"
+            }
+        ],
+        "name": "LandRegistrationStatus",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "registrationStatus",
                 "type": "bool"
             }
         ],
@@ -300,6 +384,25 @@
     {
         "inputs": [
             {
+                "internalType": "uint256",
+                "name": "_tokenId",
+                "type": "uint256"
+            }
+        ],
+        "name": "allRequesterAddressForViewDocument",
+        "outputs": [
+            {
+                "internalType": "address[]",
+                "name": "allRequesters",
+                "type": "address[]"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "address",
                 "name": "to",
                 "type": "address"
@@ -311,36 +414,6 @@
             }
         ],
         "name": "approve",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "components": [
-                    {
-                        "internalType": "address",
-                        "name": "_sellingTo",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "_tokenId",
-                        "type": "uint256"
-                    },
-                    {
-                        "internalType": "bool",
-                        "name": "status",
-                        "type": "bool"
-                    }
-                ],
-                "internalType": "struct YexleAppian.approverData",
-                "name": "_data",
-                "type": "tuple"
-            }
-        ],
-        "name": "approveAndTransferLand1",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -450,6 +523,19 @@
         "name": "burn",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "completedRegistrations",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "totalCompletedRegistrations",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     },
     {
@@ -591,6 +677,25 @@
         "type": "function"
     },
     {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "tokenId",
+                "type": "uint256"
+            }
+        ],
+        "name": "noOfRequestersInfoToViewDoc",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "allRequesterCount",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
         "inputs": [],
         "name": "owner",
         "outputs": [
@@ -696,6 +801,25 @@
         "name": "requestLandForSale",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "landOwnerAddress",
+                "type": "address"
+            }
+        ],
+        "name": "returnAllUriForLandOwner",
+        "outputs": [
+            {
+                "internalType": "string[]",
+                "name": "allUris",
+                "type": "string[]"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     },
     {

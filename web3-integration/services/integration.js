@@ -55,6 +55,28 @@ const createAddress = function() {
 }
 
 // write actions with the flow
+const whitelistUserApproverL1 = async (l1Address) => {
+  if (isAddress(l1Address)) {
+    let { userSigner, provider } = initiateUserContract();
+    return userSigner.whitelistApproverL1(l1Address, {
+      gasLimit: ethers.utils.hexlify(1000000),
+      gasPrice: ethers.utils.hexlify(parseInt(await provider.getGasPrice()) * 2)
+    })
+    .then(transaction => {
+      return provider.waitForTransaction(transaction.hash);
+    })
+    .then(receipt => {
+      return receipt;
+    })
+    .catch(err => {
+      console.log(err);
+      return err;
+    })
+  } else {
+    return new Error('Invalid address')
+  }
+}
+
 const addUser = async (addressDetails) => {
   if (isAddress(addressDetails._l1) && isAddress(addressDetails._ad)) {
     let { userSigner, provider } = initiateUserContract();
@@ -87,6 +109,50 @@ const addUserBulk = async (l1, addresses) => {
   .catch(err => {return err;})
 }
 
+const whitelistApproverL1 = async (l1Address) => {
+  if (isAddress(l1Address)) {
+    let {regSigner, provider} = initiateRegistrationContract();
+    return regSigner.whitelistApproverL1(l1Address, {
+      gasLimit: ethers.utils.hexlify(1000000),
+      gasPrice: ethers.utils.hexlify(parseInt(await provider.getGasPrice()) * 2)
+    })
+    .then(transaction => {
+      return provider.waitForTransaction(transaction.hash);
+    })
+    .then(receipt => {
+      return receipt;
+    })
+    .catch(err => {
+      console.log(err);
+      return err;
+    })
+  } else {
+    return new Error('Invalid address')
+  }
+}
+
+const whitelistApproverL2 = async (l1Address) => {
+  if (isAddress(l1Address)) {
+    let {regSigner, provider} = initiateRegistrationContract();
+    return regSigner.whitelistApproverL2(l1Address, {
+      gasLimit: ethers.utils.hexlify(1000000),
+      gasPrice: ethers.utils.hexlify(parseInt(await provider.getGasPrice()) * 2)
+    })
+    .then(transaction => {
+      return provider.waitForTransaction(transaction.hash);
+    })
+    .then(receipt => {
+      return receipt;
+    })
+    .catch(err => {
+      console.log(err);
+      return err;
+    })
+  } else {
+    return new Error('Invalid address')
+  }
+}
+
 const mint = async (_l1, _to, land_id, token_ipfs_hash) => {
   let {regSigner, provider} = initiateRegistrationContract();
   return regSigner.mint(_l1, _to, land_id, token_ipfs_hash, {
@@ -99,6 +165,29 @@ const mint = async (_l1, _to, land_id, token_ipfs_hash) => {
     return receipt;
   })
   .catch(err => {return err;})
+}
+
+const setTokenURI = async (land_id, token_ipfs_hash, owner) => {
+  try {
+    let {regSigner, provider} = initiateRegistrationContract(owner.private_key);
+    return transferFee(owner.public_key)
+    .then(() => {
+      return regSigner.setTokenURI(land_id, token_ipfs_hash, {
+        gasLimit: ethers.utils.hexlify(1000000),
+      })
+    })
+    .then(transaction => {
+      return provider.waitForTransaction(transaction.hash);
+    })
+    .then(receipt => {
+      console.log("approve: ", receipt.status, receipt.transactionHash);
+      return receipt;
+    })
+    .catch(err => {return err;})
+  } catch(err) {
+    console.log(err);
+    return err;
+  }
 }
 
 const landDocumentViewRequestApprove = async (_l1, _requestor, land_id, status) => {
@@ -191,24 +280,31 @@ const transferFee = async (toAddress) => {
   };
   return walletSigner.sendTransaction(tx)
   .then((transaction) => {
-    return transaction.wait();
+    return provider.waitForTransaction(transaction.hash);
+  })
+  .then(receipt => {
+    console.log("transfer fee: ", receipt.status, receipt.transactionHash);
+    return receipt;
   })
   .catch(function(err) {
     console.log('error: ', err);
   });
 }
 
-const approve = async (_l2, land_id, owner) => {
+const approve = async (land_id, owner) => {
   try {
-    await transferFee(owner.public_key);
     let {regSigner, provider} = initiateRegistrationContract(owner.private_key);
-    return regSigner.approve(_l2, land_id, {
-      gasLimit: ethers.utils.hexlify(1000000),
+    return transferFee(owner.public_key)
+    .then(() => {
+      return regSigner.approve(PUBLIC_KEY, land_id, {
+        gasLimit: ethers.utils.hexlify(1000000),
+      })
     })
     .then(transaction => {
       return provider.waitForTransaction(transaction.hash);
     })
     .then(receipt => {
+      console.log("approve: ", receipt.status, receipt.transactionHash);
       return receipt;
     })
     .catch(err => {return err;})
@@ -220,7 +316,7 @@ const approve = async (_l2, land_id, owner) => {
 
 const approveByL2 = async (_l2, data, owner) => {
   let {regSigner, provider} = initiateRegistrationContract();
-  return approve(_l2, data._tokenId, owner)
+  return approve(data._tokenId, owner)
   .then(() => {
     return regSigner.approveByL2(_l2, data, {
       gasLimit: ethers.utils.hexlify(1000000),
@@ -232,19 +328,216 @@ const approveByL2 = async (_l2, data, owner) => {
   .then(receipt => {
     return receipt;
   })
+  .catch(err => {
+    console.log(err)
+    return err;
+  })
+}
+
+// read actions
+const L1ApproverAddress = async () => {
+  let { userContract, provider } = initiateUserContract();
+  return userContract.L1ApproverAddress()
+  .then(l1 => {
+    return l1;
+  })
+  .catch(err => {return err;})
+}
+
+const verifyUser = async (address) => {
+  if (isAddress(address)) {
+    let { userContract, provider } = initiateUserContract();
+    return userContract.verifyUser(address)
+    .then(status => {
+      return status;
+    })
+    .catch(err => {return err;})
+  } else {
+    return new Error('Invalid address')
+  }
+}
+
+const getAllUserAddress = async () => {
+  let { userContract, provider } = initiateUserContract();
+  return userContract.getAllUserAddress()
+  .then(users => {
+    return users;
+  })
+  .catch(err => {return err;})
+}
+
+const metadataUri = async () => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.metadataUri()
+  .then(uri => {
+    return uri;
+  })
+  .catch(err => {return err;})
+}
+
+const viewDocumentByOwnerOrLevelApprovers = async (address, land_id) => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.viewDocumentByOwnerOrLevelApprovers(address, land_id)
+  .then(uri => {
+    return uri;
+  })
+  .catch(err => {return err;})
+}
+
+const ownerOf = async (land_id) => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.ownerOf(parseInt(land_id))
+  .then(owner => {
+    return owner;
+  })
+  .catch(err => {return err;})
+}
+
+const LandRequesterStatus = (address, land_id) => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.LandRequesterStatus(address, land_id)
+  .then(([ViewDocumentStatus, L1ApproverStatusForRequester, L2ApproverstatusForRequester, approveCountForTokenIdByApprovers]) => {
+    return {
+      viewDocumentStatus: ViewDocumentStatus,
+      l1ApproverStatusForRequester: L1ApproverStatusForRequester,
+      l2ApproverstatusForRequester: L2ApproverstatusForRequester,
+      approveCountForTokenIdByApprovers: parseInt(approveCountForTokenIdByApprovers)
+    };
+  })
+  .catch(err => {return err;})
+}
+
+const UserCounts = () => {
+  let { userContract, provider } = initiateUserContract();
+  return userContract.UserCounts()
+  .then(users => {
+    return parseInt(users);
+  })
+  .catch(err => {return err;})
+}
+
+const L1Approver = () => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.L1Approver()
+  .then(approver => {
+    return approver;
+  })
+  .catch(err => {return err;})
+}
+
+const L2Approver = () => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.L2Approver()
+  .then(approver => {
+    return approver;
+  })
+  .catch(err => {return err;})
+}
+
+const L1ApprovalCounts = () => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.L1ApprovalCounts()
+  .then(count => {
+    return parseInt(count);
+  })
+  .catch(err => {return err;})
+}
+
+const L2ApprovalCounts = () => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.L2ApprovalCounts()
+  .then(count => {
+    return parseInt(count);
+  })
+  .catch(err => {return err;})
+}
+
+const LandCounts = () => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.LandCounts()
+  .then(count => {
+    return parseInt(count);
+  })
+  .catch(err => {return err;})
+}
+
+const LandRegistrationStatus = (land_id) => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.LandRegistrationStatus(parseInt(land_id))
+  .then(status => {
+    return status;
+  })
+  .catch(err => {return err;})
+}
+
+const completedRegistrations = () => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.completedRegistrations()
+  .then(count => {
+    return parseInt(count);
+  })
+  .catch(err => {return err;})
+}
+
+const returnAllUriForLandOwner = (address) => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.returnAllUriForLandOwner(address)
+  .then(cids => {
+    return cids;
+  })
+  .catch(err => {return err;})
+}
+
+const noOfRequestersInfoToViewDoc = (land_id) => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.noOfRequestersInfoToViewDoc(parseInt(land_id))
+  .then(count => {
+    return parseInt(count);
+  })
+  .catch(err => {return err;})
+}
+
+const allRequesterAddressForViewDocument = (land_id) => {
+  let {regContract, provider} = initiateRegistrationContract();
+  return regContract.allRequesterAddressForViewDocument(parseInt(land_id))
+  .then(requesters => {
+    return requesters;
+  })
   .catch(err => {return err;})
 }
 
 module.exports = {
   createAddress,
+  whitelistUserApproverL1,
   addUser,
   addUserBulk,
+  whitelistApproverL1,
+  whitelistApproverL2,
   mint,
+  setTokenURI,
   landDocumentViewRequestApprove,
   viewDocumentByRequesters,
   requestLandForSale,
   ownerDecisionforRaisedRequest,
   registrationForLandByBuyer,
   approveByL1,
-  approveByL2
+  approveByL2,
+  L1ApproverAddress,
+  verifyUser,
+  getAllUserAddress,
+  metadataUri,
+  viewDocumentByOwnerOrLevelApprovers,
+  ownerOf,
+  LandRequesterStatus,
+  UserCounts,
+  L1Approver,
+  L2Approver,
+  L1ApprovalCounts,
+  L2ApprovalCounts,
+  LandCounts,
+  LandRegistrationStatus,
+  completedRegistrations,
+  returnAllUriForLandOwner,
+  noOfRequestersInfoToViewDoc,
+  allRequesterAddressForViewDocument
 }
