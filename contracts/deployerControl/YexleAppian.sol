@@ -81,6 +81,10 @@ contract YexleAppian is ERC721Burnable, Ownable {
     mapping(address => mapping(uint => bool)) private L2statusForL1Approver;
     mapping(uint => bool) private L1approverDecision;
     mapping(uint => bool) private L2approverDecision;
+    mapping(address => string[]) private allURI;
+    mapping(uint => address[]) private allViewRequesterAddressToView;
+    mapping(uint => uint) private noOfRequestsToViewLandDoc;
+    mapping(uint => string) private recordUri;
     /**
         * If registrationProcess[tokenId] = false; // Then land is still in process.
         * If registrationProcess[tokenId] = true; // Then land registration is completed.
@@ -171,6 +175,9 @@ contract YexleAppian is ERC721Burnable, Ownable {
             _owners[_tokenId] = _to;
             totalLands += 1;
             totalLimit = totalLimit + 1;
+            string memory local = string(abi.encodePacked(metadataUri, holdUri[_tokenId]));
+            allURI[_to].push(local);
+            recordUri[_tokenId] = _tokenUri;
             emit OwnershipTransferOfLand(address(0), _to, _tokenId);
         }else{
             revert("Connected address does not have access to create land");
@@ -188,6 +195,16 @@ contract YexleAppian is ERC721Burnable, Ownable {
         holdUri[_id] = bytes(metadataUri).length != 0
         ? string(abi.encodePacked(_tokenUri))
         : '';
+        string memory local = string(abi.encodePacked(metadataUri,holdUri[_id]));
+        string memory previousUri = string(abi.encodePacked(metadataUri,recordUri[_id]));
+        for(uint i = 0; i <  allURI[msg.sender].length; i++){
+            string memory uri = allURI[msg.sender][i];
+            if(keccak256(abi.encodePacked(uri)) == keccak256(abi.encodePacked(previousUri))){
+                delete allURI[msg.sender][i];
+            }
+        }
+        recordUri[_id] = _tokenUri;
+        allURI[msg.sender].push(local);
     }
 
     /** 
@@ -206,6 +223,8 @@ contract YexleAppian is ERC721Burnable, Ownable {
         if(l1Address != L1Approver){ revert notL1Approver();}
         if(_status){
             viewAccessGranted[_requester][tokenId] = true;
+            noOfRequestsToViewLandDoc[tokenId] += 1;
+            allViewRequesterAddressToView[tokenId].push(_requester);
             emit AccessGrantedToView(_requester, tokenId);
         }else{
             viewAccessGranted[_requester][tokenId] = false;
@@ -314,10 +333,31 @@ contract YexleAppian is ERC721Burnable, Ownable {
         if(approvecount[_data._tokenId] == 2 && L2approverDecision[_data._tokenId]){
             // The Owner of NFT needs to provide approve action to let L2 to change ownership
             transferFrom(_data._previousOwner, _data._sellingTo, _data._tokenId);
+            string memory local = string(abi.encodePacked(metadataUri,recordUri[_data._tokenId]));
+            for(uint i = 0; i <  allURI[_data._previousOwner].length; i++){
+                string memory uri = allURI[_data._previousOwner][i];
+                if(keccak256(abi.encodePacked(uri)) == keccak256(abi.encodePacked(local))){
+                    delete allURI[_data._previousOwner][i]; // or delete uri (both are same method).
+                }
+            }
+            allURI[_data._sellingTo].push(local);
             _owners[_data._tokenId] = _data._sellingTo;
             emit OwnershipTransferOfLand(_data._previousOwner, _data._sellingTo, _data._tokenId);
         }
     }
+
+    // /**
+    //     * removeUri
+    //     * @param index - Enter the index number and delete the array.
+    //     * @param _ad - Enter the address of the landOwner.
+    // */
+    // function removeUri(uint256 index, address _ad) external onlyAdmin{
+    //     if (index >= allURI[_ad].length) return;
+    //     for (uint i = index; i < allURI[_ad].length - 1; i++) {
+    //        allURI[_ad][i] = allURI[_ad][i+1];
+    //     }
+    //     allURI[_ad].pop();
+    // }
     
     // READ FUNCTIONS:
     /**
@@ -410,6 +450,30 @@ contract YexleAppian is ERC721Burnable, Ownable {
     */
     function completedRegistrations() external view returns(uint totalCompletedRegistrations){
         return completedRegistration;
+    }
+
+    /**
+        * noOfRequestersInfoToViewDoc 
+        * @param tokenId - pass the unique ID which represents the land. created during minting the land NFT
+    */
+    function noOfRequestersInfoToViewDoc(uint tokenId) external view returns(uint allRequesterCount){
+        return noOfRequestsToViewLandDoc[tokenId]; 
+    }
+
+    /**
+        * returnAllUriForLandOwner
+        * @param landOwnerAddress - Enter the land owner address 
+    */
+    function returnAllUriForLandOwner(address landOwnerAddress) external view returns(string[] memory returnallUris){
+        return allURI[landOwnerAddress];
+    }
+
+    /**
+        * allRequesterAddressForViewDocument.
+        * @param _tokenId. 
+    */
+    function allRequesterAddressForViewDocument(uint _tokenId) external view returns(address[] memory allRequesters){
+        return allViewRequesterAddressToView[_tokenId];
     }
 
     /**
