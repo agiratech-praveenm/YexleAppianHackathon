@@ -106,7 +106,7 @@ contract YexleAppian is ERC721Burnable, Ownable {
 
     /**
         * constructor - ERC721 constructor
-        * @param _metadata - base URI : https://ipfs.io/ipfs
+        * @param _metadata - base URI : https://ipfs.io/ipfs/
     */
     constructor(string memory _metadata) ERC721("Yexele Appian", "Yexele_Land"){
         metadataUri = _metadata;
