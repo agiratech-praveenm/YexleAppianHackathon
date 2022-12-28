@@ -815,7 +815,7 @@
         "outputs": [
             {
                 "internalType": "string[]",
-                "name": "allUris",
+                "name": "returnallUris",
                 "type": "string[]"
             }
         ],
