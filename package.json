@@ -5,12 +5,14 @@
   "main": "index.js",
   "scripts": {
     "user" : "npx hardhat run scripts/userContract.js --network mumbai",
-    "appian": "npx hardhat run scripts/deployAppian.js --network mumbai",
+    "appian": "npx hardhat run scripts/deployAppian.js --network goerli",
     "metaUser" : "npx hardhat run scripts/metaTx/metaTxUserContract.js --network mumbai",
     "metaAppian" : "npx hardhat run scripts/metaTx/metaTxAppian.js --network mumbai",
     "test" : "npx hardhat test tests/yexle.js --network mumbai",
     "depA" : "npx hardhat run scripts/onlyOwner/depAppian.js --network mumbai",
-    "depU" : "npx hardhat run scripts/onlyOwner/depUser.js --network mumbai"
+    "depU" : "npx hardhat run scripts/onlyOwner/depUser.js --network mumbai",
+    "agiracoin":"npx hardhat run scripts/agiracoin.js --network goerli"
+
   },
   "keywords": [],
   "author": "",

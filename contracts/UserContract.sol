@@ -27,17 +27,24 @@ contract UserContract{
     error adminAlreadyExist();
     error notL1Address();
     error approverAlreadyExist();
+    error notOwner();
     
     address[] private pushUsers;
     address[] private adminAddresses;
-    address private owner;
+    address public owner;
     address private L1Approver;
+    uint private totalUsersCount;
     
     mapping(address => bool) private isUser;
     mapping(address => bool) private adminAddress;
     mapping(address => bool) private approverAddress;
 
     struct userBulkData{
+        address _ad;
+    }
+
+    struct userAdd{
+        address _l1;
         address _ad;
     }
 
@@ -50,6 +57,10 @@ contract UserContract{
         _;
     }
 
+    /**
+        *  whitelistApproverL1
+        * @param _approverAd - Enter the L1 approver address to the smart contract.
+    */
     function whitelistApproverL1(address _approverAd) external onlyOwner{
         if(_approverAd == address(0)){ revert zeroAddressNotSupported();}
         if(approverAddress[_approverAd] == true){revert approverAlreadyExist();}
@@ -59,30 +70,47 @@ contract UserContract{
     
     /**
         *  addUser
-        * @param _ad - Admin has the access to enter the user address to the blockchain.
+        * @param _data - Admin has the access to enter the user address to the blockchain.
     */
-    function addUser(address _ad) external {
-        if(msg.sender != L1Approver){ revert notL1Address();}
-        if(isUser[_ad] == true){ revert addressAlreadyRegistered();}
-        isUser[_ad] = true;
-        pushUsers.push(_ad);
+    function addUser(userAdd memory _data) external onlyOwner{
+        if(_data._l1 != L1Approver){ revert notL1Address();}
+        if(isUser[_data._ad] == true){ revert addressAlreadyRegistered();}
+        isUser[_data._ad] = true;
+        totalUsersCount += 1;
+        pushUsers.push(_data._ad);
     }
 
     /**
         * addUserBulk
         * @param _userData - Enter the user data (address and type) as array format.
     */
-    function addUserBulk(userBulkData[] memory _userData) external {
-        if(msg.sender != L1Approver){ revert notL1Address();}
+    function addUserBulk(address l1Address, userBulkData[] memory _userData) external onlyOwner{
+        if(l1Address != L1Approver){ revert notL1Address();}
         for(uint i = 0; i < _userData.length; i++){
             if(isUser[_userData[i]._ad] == true){ revert addressAlreadyRegistered();}
             isUser[_userData[i]._ad] = true;
+            totalUsersCount += 1;
             pushUsers.push(_userData[i]._ad);
         }
     }
 
     /**
-        *  verifyUser
+        * addUserBulk1.
+        * @param l1Address - Enter the Level 1 approver address.
+        * @param _userData - Enter the array of user addresses.
+    */
+    function addUserBulk1(address l1Address, address[] memory _userData) external onlyOwner{
+        if(l1Address != L1Approver){ revert notL1Address();}
+        for(uint i = 0; i < _userData.length; i++){
+            if(isUser[_userData[i]] == true){ revert addressAlreadyRegistered();}
+            isUser[_userData[i]] = true;
+            totalUsersCount += 1;
+            pushUsers.push(_userData[i]);
+        }
+    }
+
+    /**
+        * verifyUser
         * @param _ad - Enter the address, to know about the role
     */
     function verifyUser(address _ad) external view returns(bool){
@@ -94,14 +122,25 @@ contract UserContract{
     }
 
     /**
-        *  getAllUserAddress
-        *  outputs all the entered user address from the blockchain.
+        * getAllUserAddress
+        * outputs all the entered user address from the blockchain.
     */
     function getAllUserAddress() external view returns(address[] memory){
         return pushUsers;
     }   
 
+    /**
+        * L1ApproverAddress
+        * Get the L1 approver address. 
+    */
     function L1ApproverAddress() external view returns(address){
         return L1Approver;
-    } 
+    }
+
+    /**
+        * UserCounts  
+    */ 
+    function UserCounts() external view returns(uint totalCountOfUsers){
+        return totalUsersCount;
+    }
 }

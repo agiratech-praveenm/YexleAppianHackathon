@@ -1,46 +1,46 @@
-require("@nomicfoundation/hardhat-toolbox");
-require("@nomiclabs/hardhat-etherscan");
-require("@openzeppelin/hardhat-upgrades");
-require("dotenv").config();
+    require("@nomicfoundation/hardhat-toolbox");
+    require("@nomiclabs/hardhat-etherscan");
+    require("@openzeppelin/hardhat-upgrades");
+    require("dotenv").config();
 
-const {DEPLOYER_PVT_AD, L1PVT, L2PVT, BUYER, ES_API, ES_API_POLYSCAN, P_MAINNET, P_MUMBAI, GOERLI} = process.env;
+    const {DEPLOYER_PVT_AD, L1PVT, L2PVT, BUYER, ES_API, ES_API_POLYSCAN, P_MAINNET, P_MUMBAI, GOERLI} = process.env;
 
-/** @type import('hardhat/config').HardhatUserConfig */
-module.exports = {
-  solidity: {
-    version: "0.8.9",
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200,
+    /** @type import('hardhat/config').HardhatUserConfig */
+    module.exports = {
+      solidity: {
+        version: "0.8.9",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
       },
-    },
-  },
-  networks:{
-    polygon_mainnet: {
-      url:P_MAINNET,  
-      accounts: [DEPLOYER_PVT_AD, L1PVT, L2PVT, BUYER],
-    },
-    mumbai: {
-      url:P_MUMBAI,   
-      accounts: [DEPLOYER_PVT_AD, L1PVT, L2PVT, BUYER],
-      gas: 2100000,
-      gasPrice: 8000000000
-    },
-    goerli: {
-      url:GOERLI,  
-      accounts: [DEPLOYER_PVT_AD],
-      gas: 2100000,
-      gasPrice: 8000000000
-    }
-  },
-  etherscan : {
-    apiKey : {
-      polygonMumbai:ES_API_POLYSCAN,
-      goerli:ES_API
-    },
-  },
-  mocha: {
-    timeout: 160000
-  }
-};
+      networks:{
+        polygon_mainnet: {
+          url:P_MAINNET,  
+          accounts: [DEPLOYER_PVT_AD],
+        },
+        mumbai: {
+          url:P_MUMBAI,   
+          accounts: [DEPLOYER_PVT_AD],
+          gas: 2100000,
+          gasPrice: 8000000000
+        },
+        goerli: {
+          url:GOERLI,  
+          accounts: [DEPLOYER_PVT_AD],
+          gas: 2100000,
+          gasPrice: 8000000000
+        }
+      },
+      etherscan : {
+        apiKey : {
+          polygonMumbai:ES_API_POLYSCAN,
+          goerli:ES_API
+        },
+      },
+      mocha: {
+        timeout: 160000
+      }
+    };
